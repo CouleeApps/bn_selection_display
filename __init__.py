@@ -60,28 +60,36 @@ class SelectionDisplayWidget(QWidget, DockContextHandler, BinaryDataNotification
             label_item = QTableWidgetItem(name)
             label_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             self.table.setItem(i, 0, label_item)
+            value_item = QTableWidgetItem("")
             try:
                 value = fn(conts)
                 assert type(value) == str
+                value_item.setText(value)
             except:
-                value = "<error>"
-            self.table.setItem(i, 1, QTableWidgetItem(value))
+                value_item.setText("<error>")
+
+            self.table.setItem(i, 1, value_item)
 
     def OnAddressChange(self, context: UIContext, frame: Optional[ViewFrame], view: View, location: ViewLocation):
+        # This is technically wrong for struct arrays inside structs (see binaryninja-api#2179)
+        # Not fixing that here, though.
         selection = view.getSelectionOffsets()
 
+        # Turns out this event fires a lot
         if selection != self.last_selection:
             self.last_selection = selection
             self.update_ui()
 
-    def data_written(self, view, offset, length):
+    def data_written(self, view: BinaryView, offset: int, length: int):
         write_start = offset
         write_end = offset + length
 
+        # Only update if the write was within our selection
         if write_start > self.last_selection[1] or write_end < self.last_selection[0]:
             return
 
         self.update_ui()
+
 
     @staticmethod
     def add_format(name, func):

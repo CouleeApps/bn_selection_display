@@ -1,3 +1,4 @@
+import codecs
 import struct
 import selection_display
 
@@ -62,11 +63,11 @@ def add_default_formats():
     selection_display.SelectionDisplayWidget.add_format("Float BE",   lambda conts: transform_float(conts, ">"))
     selection_display.SelectionDisplayWidget.add_format("Binary LE",  lambda conts: transform_bin(conts[::-1]))
     selection_display.SelectionDisplayWidget.add_format("Binary BE",  transform_bin)
-    selection_display.SelectionDisplayWidget.add_format("Bytes",      lambda conts: repr(conts)[2:-1])
-    selection_display.SelectionDisplayWidget.add_format("UTF-8",      lambda conts: conts.decode(conts, 'utf-8'))
-    selection_display.SelectionDisplayWidget.add_format("UTF-16 LE",  lambda conts: conts.decode(conts, 'utf-16-le'))
-    selection_display.SelectionDisplayWidget.add_format("UTF-16 BE",  lambda conts: conts.decode(conts, 'utf-16-be'))
-    selection_display.SelectionDisplayWidget.add_format("UTF-32 BE",  lambda conts: conts.decode(conts, 'utf-32-be'))
-    selection_display.SelectionDisplayWidget.add_format("UTF-32 BE",  lambda conts: conts.decode(conts, 'utf-32-be'))
     selection_display.SelectionDisplayWidget.add_format("ULEB128",    transform_uleb128)
     selection_display.SelectionDisplayWidget.add_format("SLEB128",    transform_sleb128)
+    selection_display.SelectionDisplayWidget.add_format("Bytes",      lambda conts: repr(conts)[2:-1])
+    selection_display.SelectionDisplayWidget.add_format("UTF-8",      lambda conts: codecs.decode(conts, 'utf-8'))
+    selection_display.SelectionDisplayWidget.add_format("UTF-16 LE",  lambda conts: codecs.decode(conts, 'utf-16-le'))
+    selection_display.SelectionDisplayWidget.add_format("UTF-16 BE",  lambda conts: codecs.decode(conts, 'utf-16-be'))
+    selection_display.SelectionDisplayWidget.add_format("UTF-32 LE",  lambda conts: codecs.decode(conts, 'utf-32-le'))
+    selection_display.SelectionDisplayWidget.add_format("UTF-32 BE",  lambda conts: codecs.decode(conts, 'utf-32-be'))
