@@ -37,7 +37,7 @@ class SelectionDisplayWidget(QWidget, DockContextHandler, BinaryDataNotification
         layout.addWidget(self.table)
         layout.setContentsMargins(0, 0, 0, 0)
         self.font = getMonospaceFont(self)
-        self.table.setRowCount(9)
+        self.table.setRowCount(0)
         self.table.setColumnCount(2)
         self.table.horizontalHeader().hide()
         self.table.verticalHeader().hide()
@@ -66,6 +66,44 @@ class SelectionDisplayWidget(QWidget, DockContextHandler, BinaryDataNotification
         def transform_bin(conts):
             return " ".join(f"{c:08b}" for c in conts)
 
+        def transform_uleb128(conts):
+            shift = 0
+            result = 0
+            i = 0
+            while True:
+                byte = conts[i]
+                if shift == 63 and byte != 0 and byte != 1:
+                    # Longer than 64 bits
+                    raise ValueError("Invalid data")
+
+                bits = byte & 0x7f
+                result |= bits << shift
+                shift += 7
+                i += 1
+
+                if byte & 0x80 == 0:
+                    break
+
+            return f"{result}"
+
+        def transform_sleb128(conts):
+            shift = 0
+            result = 0
+            i = 0
+            while True:
+                byte = conts[i]
+                result |= (byte & 0x7f) << shift
+                shift += 7
+                i += 1
+
+                if byte & 0x80 == 0:
+                    break
+
+            if (byte & 0x40) == 0x40:
+                result |= ~0 << shift
+
+            return f"{result}"
+
         transforms = [
             ("Int LE Hex", lambda conts: f"0x{int(conts[::-1].hex(), 16):x}"),
             ("Int LE Dec", lambda conts: f"{int(conts[::-1].hex(), 16)}"),
@@ -73,10 +111,19 @@ class SelectionDisplayWidget(QWidget, DockContextHandler, BinaryDataNotification
             ("Int BE Dec", lambda conts: f"{int(conts.hex(), 16)}"),
             ("Float LE",   lambda conts: transform_float(conts, "<")),
             ("Float BE",   lambda conts: transform_float(conts, ">")),
-            ("Bytes",      lambda conts: repr(conts)[2:-1]),
             ("Binary LE",  lambda conts: transform_bin(conts[::-1])),
             ("Binary BE",  transform_bin),
+            ("Bytes",      lambda conts: repr(conts)[2:-1]),
+            ("UTF-8",      lambda conts: conts.decode(conts, 'utf-8')),
+            ("UTF-16 LE",  lambda conts: conts.decode(conts, 'utf-16-le')),
+            ("UTF-16 BE",  lambda conts: conts.decode(conts, 'utf-16-be')),
+            ("UTF-32 BE",  lambda conts: conts.decode(conts, 'utf-32-be')),
+            ("UTF-32 BE",  lambda conts: conts.decode(conts, 'utf-32-be')),
+            ("ULEB128",    transform_uleb128),
+            ("SLEB128",    transform_sleb128),
         ]
+
+        self.table.setRowCount(len(transforms))
 
         for i, (name, fn) in enumerate(transforms):
             label_item = QTableWidgetItem(name)
